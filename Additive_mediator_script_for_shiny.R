@@ -1598,7 +1598,12 @@ Emfinger_mediation <- function(
               #  clnms_mediator$gene.id[i] <- str_split(clnms_mediator$ID[i], pattern="[.]")[[1]][1] 
               #}
               print(head(clnms_mediator))
+              if (selected_mediator$Type[1] == "Proteins") {
+              clnms_mediator <- subset(clnms_mediator, ID %in% annotation_selected$protein.id)
+              }
+              if (selected_mediator$Type[1] == "RNA"){
               clnms_mediator <- subset(clnms_mediator, ID %in% annotation_selected$gene.id)
+              }
               print(head(clnms_mediator))
               mediator_selected <- mediator_selected[,clnms_mediator$ID]
               #print(head(mediator_selected))
@@ -1677,6 +1682,8 @@ Emfinger_mediation <- function(
           
         #run the scan
           cat("...calculating the LOD drop...\n")
+          assign("annotation_selected_obj", annotation_selected, envir = .GlobalEnv)
+          assign("mediator_selected_obj", mediator_selected, envir = .GlobalEnv)
           inter_mediation <- mediation.scan(target = as.matrix(pheno_subset[test_these$Phenotype[cntr]]),
                                             mediator = as.matrix(mediator_selected),
                                             annotation = annotation_selected,
@@ -2018,7 +2025,7 @@ post_odds <- post_odds %>%
 
 if (mediator_type != "RNA/Protein"){
   post_odds <- post_odds %>%
-  left_join(inter_mediation, by=c("gene.id"="gene.id"))
+  left_join(inter_mediation, by=c("ID"="ID"))
   colnames(post_odds)[1]<-"ID"
 }
 if (save_mediation == TRUE){
