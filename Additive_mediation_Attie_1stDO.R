@@ -265,7 +265,7 @@ ui <- page_sidebar(
       "window",
       label = "What window for analysis (Mbp)? 0 means all genome",
       min = 0,
-      max = 150,
+      max = 200,
       value = 4,
       round = TRUE
     ),
