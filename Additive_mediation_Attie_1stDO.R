@@ -92,6 +92,9 @@ ln_prior_c <- "complete"
 ncors = 1
 
 #set functions======================================================================================
+# the mediation function itself is a file
+source("~/Additive_mediator_script_for_shiny.R")
+
 # reformat the phenotypes
 pheno_reformat <- function(selected_dataset){
   # get the data to be mediated
