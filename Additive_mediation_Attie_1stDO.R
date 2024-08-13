@@ -8,6 +8,10 @@
 #' followed formats shown on 
 #' https://clarewest.github.io/blog/post/making-tables-shiny/
 #' 
+#' Also note that the select covariates sub-menu includes operators so that the 
+#' final matrix can be generated using as.formula() and model.matrix()
+#' E.g. when one selects "Sex" "+" and "Generation" using the menu, in that order,
+#' the final matrix is generated using the formula '~Sex+Generation'
 
 
 # load libraries=============================================================================
