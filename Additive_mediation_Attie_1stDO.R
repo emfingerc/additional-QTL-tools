@@ -214,7 +214,7 @@ ui <- page_sidebar(
                         ),
                           selectizeInput(
                           inputId = "mediator_object_choice",
-                          label = "Choose the dataset to mediate with",
+                          label = "Choose the dataset to mediate with (RNA, protein, or other phenotypes",
                           choices = names(mediator_list_object),
                           multiple = FALSE,
                           options = list(
@@ -223,7 +223,7 @@ ui <- page_sidebar(
                         ),
     selectizeInput(
       "mediator_compartment",
-      label = "Which compartment/dataset?",
+      label = "Which compartment/tissue (e.g. Liver)? Note that you can only use one at a time. This means must delete whatever is selected by default if it isn't what you want before you type your choice.",
       choices = NULL,
       multiple = TRUE,
       options = list(
@@ -232,7 +232,7 @@ ui <- page_sidebar(
     ),  
     selectizeInput(
       inputId = "which_covar",
-      label = "Choose covariates",
+      label = "Choose covariates. Note that if you want multiple, also choose the operators (e.g. +, *, etc) between them. You cannot choose operators by themselves or multiple traits without operators between them."
       choices = NULL,
       multiple = TRUE,
       options = list(
@@ -250,7 +250,7 @@ ui <- page_sidebar(
     
     selectizeInput(
       inputId = "which_peak",
-      label = "Choose the peak to mediate",
+      label = "Choose the peak to mediate. Select it by its marker id from the table",
       choices = NULL,
       multiple = TRUE,
       options = list(
@@ -467,7 +467,7 @@ server <- function(input, output, session) {
                  extensions = 'Buttons',
                  selection = 'single', ## enable selection of a single row
                  filter = 'bottom',              ## include column filters at the bottom
-                 rownames = FALSE                ## don't show row numbers/names
+                 rownames = TRUE                ## need this for the marker.id
      )
      })
      
