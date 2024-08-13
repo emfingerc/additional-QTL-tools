@@ -34,6 +34,7 @@ require("shinyFiles")
 require("bslib")
 require("spsComps")
 require("DT")
+require("shinyjs")
 
 # set shiny options==========================================================================
 options(shiny.maxRequestSize = 20000*1024^2)  # Increase to 20GB needed for Genoprobs, etc
@@ -190,10 +191,11 @@ make_mediator_list <- function(mediator_object_choice, mediator_compartment){
 ui <- page_sidebar(
   # sets the page
   # sets the title
-  titlePanel("Additive mediation tool for the islet DO study"),
+  titlePanel("Additive mediation tool"),
   
   # sets sidebar
   sidebar = sidebar(
+    id = "side_panel",
     helpText(
       "Select your data to mediate, what to mediate with, and options."
     ),
@@ -214,7 +216,7 @@ ui <- page_sidebar(
                         ),
                           selectizeInput(
                           inputId = "mediator_object_choice",
-                          label = "Choose the dataset to mediate with (RNA, protein, or other phenotypes",
+                          label = "Choose the dataset to mediate with (RNA, protein, or other phenotypes.",
                           choices = names(mediator_list_object),
                           multiple = FALSE,
                           options = list(
@@ -223,7 +225,7 @@ ui <- page_sidebar(
                         ),
     selectizeInput(
       "mediator_compartment",
-      label = "Which compartment/tissue (e.g. Liver)? Note that you can only use one at a time. This means must delete whatever is selected by default if it isn't what you want before you type your choice.",
+      label = "Which compartment/dataset (e.g. Liver)? Note that you can only use one at a time. This means must delete whatever is selected by default if it isn't what you want before you type your choice.",
       choices = NULL,
       multiple = TRUE,
       options = list(
@@ -232,7 +234,7 @@ ui <- page_sidebar(
     ),  
     selectizeInput(
       inputId = "which_covar",
-      label = "Choose covariates. Note that if you want multiple, also choose the operators (e.g. +, *, etc) between them. You cannot choose operators by themselves or multiple traits without operators between them."
+      label = "Choose covariates. Note that if you want multiple, also choose the operators (e.g. +, *, etc) between them. You cannot choose operators by themselves or multiple traits without operators between them.",
       choices = NULL,
       multiple = TRUE,
       options = list(
@@ -281,7 +283,8 @@ ui <- page_sidebar(
       round = TRUE
     ),
     pre(id = "console"),
-    actionButton("run", "Run")
+    actionButton("run", "Run"),
+    actionButton("reset_input", "Reset inputs")
   ),
   # sets main panel
   mainPanel(
@@ -292,7 +295,8 @@ ui <- page_sidebar(
     card(
       card_header("Selected trait & covariates used"),
       verbatimTextOutput("selected_trait"),
-      verbatimTextOutput("covariates")
+      verbatimTextOutput("covariates"),
+      verbatimTextOutput("covariate_set")
       
     ),
     card(
@@ -330,6 +334,18 @@ ui <- page_sidebar(
 
 # set server==================================================================================================
 server <- function(input, output, session) {
+ 
+    
+ # monitor the console
+ #  observeEvent(input$run, {
+  #  withCallingHandlers({
+  #   shinyjs::html("text", "")
+  #  shinyCatch({message("a message")}, prefix = '')
+  #  },
+  #  message = function(m) {
+  #    shinyjs::html(id = "text", html = m$message, add = TRUE)
+  # })
+  # })
   
   # create the mediator list
   observeEvent(input$selected_dataset, {
@@ -379,10 +395,7 @@ server <- function(input, output, session) {
   # the reformatting of the selected traits
   pheno <- reactive({
     chosen_data <- .GlobalEnv[[data_list[[input$selected_dataset]]]]
-    phenotypes <- withCallingHandlers(
-      expr = {
-        pheno_reformat(chosen_data)
-      })
+    phenotypes <- pheno_reformat(chosen_data)
     return(phenotypes)
   })
   
@@ -420,17 +433,29 @@ server <- function(input, output, session) {
      
      # create the covariate matrix
      observeEvent(input$run,{
-       covariates <- as.formula(paste0("~",paste(myCovar(),collapse = "")))
+       covariates <- as.formula(paste0("~",paste(covar_statement,collapse = "")))
        phenotypes <- pheno()
-       if (any(myCovar() %in% categor_covar)){
-         phenotypes[,myCovar()[which((myCovar() %in% categor_covar)==TRUE)]] <- as.character(phenotypes[,myCovar()[which((myCovar() %in% categor_covar)==TRUE)]])
+       if (any(covar_statement %in% c("+","*","-","/"))){
+         covar_statement <- covar_statement[-which((covar_statement %in% c("+","*","-","/"))==TRUE)]
+       }
+       if (any(covar_statement %in% categor_covar)){
+         for (i in 1:nrow(phenotypes)){
+           phenotypes[i,covar_statement[which((covar_statement %in% categor_covar)==TRUE)]] <- as.character(phenotypes[i,covar_statement[which((covar_statement %in% categor_covar)==TRUE)]])
+         }
        }
        covar_matrix <- model.matrix(covariates, data=phenotypes)[,-1]
-       if(length(myCovar())==1){
-         covar_matrix <- t(t(covar_matrix))
-         colnames(covar_matrix) <- paste(myCovar(),collapse = "")
+       #covar_matrix <- data.frame(covar_matrix)
+       #colnames(covar_matrix) <- covar_statement
+       #covar_matrix <- as.matrix(covar_matrix)
+       if(length(covar_statement)==1){
+         covar_matrix <- data.frame(t(t(covar_matrix)))
+         #colnames(covar_matrix) <- covar_statement
+         covar_matrix <- as.matrix(covar_matrix)
        }
        assign("covar_matrix", covar_matrix, envir = .GlobalEnv)
+       assign("covariate_formula", covariates, envir = .GlobalEnv)
+       assign("length_covar_resp", length(covar_statement), envir = .GlobalEnv)
+       assign("phenotype_obj", phenotypes, envir = .GlobalEnv)
      })
   
     # create the trait list
@@ -467,7 +492,7 @@ server <- function(input, output, session) {
                  extensions = 'Buttons',
                  selection = 'single', ## enable selection of a single row
                  filter = 'bottom',              ## include column filters at the bottom
-                 rownames = TRUE                ## need this for the marker.id
+                 rownames = TRUE                ## don't show row numbers/names
      )
      })
      
@@ -517,6 +542,12 @@ server <- function(input, output, session) {
          usewindow <- TRUE
          window <- as.numeric(input$window)
        }
+       phenotypes <- pheno()
+       if (any(covar_statement) %in% categor_covar){
+       for (i in 1:nrow(phenotypes)){
+           phenotypes[i,covar_statement[which((covar_statement %in% categor_covar)==TRUE)]] <- as.character(phenotypes[i,covar_statement[which((covar_statement %in% categor_covar)==TRUE)]])
+       }
+       }
        QTL_list <- make_QTL_list(.GlobalEnv[[data_list[[input$selected_dataset]]]], input$which_trait)
        QTL_list <- subset(QTL_list, marker.id == input$which_peak)
        completed_mediation <- Emfinger_mediation(
@@ -524,7 +555,7 @@ server <- function(input, output, session) {
          K = kinship,
          genoprobs = allele_probabilities,
          map = map,
-         pheno = pheno(),
+         pheno = phenotypes,
          covar = covar_matrix,
          test_these = pheno_list,
          mediator = chosen_mediators,
@@ -564,8 +595,6 @@ server <- function(input, output, session) {
        assign("completed_mediation", completed_mediation, envir = .GlobalEnv)
        
        # populate a list of peaks
-       # note that the rendering of the datatable is based on 
-       # 
        output$mediation_table <- renderDT({DT::datatable(
          completed_mediation$tabular_results,
          options = list(paging = TRUE,    ## paginate the output
@@ -599,7 +628,24 @@ server <- function(input, output, session) {
        output$colocal <- renderPlot({completed_mediation$bmediatR_plots$colocal})
      })
      
-     
+     # reset events
+     observeEvent(input$reset_input, {
+       shinyjs::reset("side_panel")
+       #QTL plot
+       output$QTL_plot <- NULL
+       
+       #LOD drop plot
+       output$LOD_drop_plot <- NULL
+       
+       #complete mediation plot
+       output$complete_mediation <- NULL
+       
+       #colocal plot
+       output$colocal <- NULL
+       
+       #mediation table
+       output$mediation_table <- NULL
+     })
 }
 
 
