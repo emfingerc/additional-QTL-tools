@@ -194,7 +194,7 @@ make_mediator_list <- function(mediator_object_choice, mediator_compartment){
 ui <- page_sidebar(
   # sets the page
   # sets the title
-  titlePanel("Additive mediation tool"),
+  titlePanel("Additive mediation tool for islet Diversity Outbred study"),
   
   # sets sidebar
   sidebar = sidebar(
