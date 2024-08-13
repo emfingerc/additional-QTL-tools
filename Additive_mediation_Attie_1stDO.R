@@ -546,7 +546,7 @@ server <- function(input, output, session) {
          window <- as.numeric(input$window)
        }
        phenotypes <- pheno()
-       if (any(covar_statement) %in% categor_covar){
+       if (any(covar_statement %in% categor_covar)){
        for (i in 1:nrow(phenotypes)){
            phenotypes[i,covar_statement[which((covar_statement %in% categor_covar)==TRUE)]] <- as.character(phenotypes[i,covar_statement[which((covar_statement %in% categor_covar)==TRUE)]])
        }
