@@ -495,7 +495,7 @@ server <- function(input, output, session) {
                  extensions = 'Buttons',
                  selection = 'single', ## enable selection of a single row
                  filter = 'bottom',              ## include column filters at the bottom
-                 rownames = TRUE                ## don't show row numbers/names
+                 rownames = TRUE                ## do show row numbers/names
      )
      })
      
