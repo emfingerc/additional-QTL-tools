@@ -669,7 +669,7 @@ server <- function(input, output, session) {
         point_selection <- nearPoints(newscans[[2]], input$plot_click, xvar = "BPcum", yvar = "LOD", threshold = 10, maxpoints = 1,
                                       addDist = TRUE)
         assign("point_selection", point_selection, envir=.GlobalEnv)
-        peaks_set = find_peaks(scan1_output=qtl.temp, map=map, threshold=LOD_thr, prob=0.95)
+        peaks_set = find_peaks(scan1_output=qtl.temp, map=map, threshold=input$LOD_thr, prob=0.95)
         peaks_set$marker <- peaks_set$lodindex
         if ((point_selection$markers %in% peaks)!=TRUE){
           
